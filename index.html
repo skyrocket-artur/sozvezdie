@@ -1,0 +1,632 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Твоё созвездие</title>
+<meta name="description" content="Впиши людей, которые были рядом, и посмотри, как шла твоя жизнь и кто остался на твоём небе.">
+<meta name="theme-color" content="#0a0f26">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Onest:wght@600;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0a0f26;--card:rgba(255,255,255,.06);--line:rgba(200,210,255,.16);--txt:#eef1ff;--mut:#a9b2d6;--acc:#ffbe3d;--acc2:#7fb0ff}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--txt);font-family:Onest,system-ui,sans-serif;font-weight:600}
+body{min-height:100vh;background:radial-gradient(120% 70% at 30% 0%,#1a2160 0%,#0b1330 45%,#070b1c 100%) fixed}
+#sky{position:fixed;inset:0;pointer-events:none;z-index:0}
+.wrap{position:relative;z-index:1;max-width:480px;margin:0 auto;padding:22px 16px 40px}
+.screen{display:none}.screen.on{display:block;animation:fade .5s ease}
+@keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+h1{font-weight:800;font-size:40px;line-height:1.05;margin:18vh 0 14px;letter-spacing:-.5px}
+h2{font-weight:800;font-size:24px;margin:8px 0 6px}
+p{color:var(--mut);font-size:17px;line-height:1.45;margin:0 0 14px}
+.btn{display:block;width:100%;border:0;border-radius:16px;padding:17px 18px;font:800 18px Onest,sans-serif;color:#0a0f26;background:var(--acc);cursor:pointer;margin-top:12px;text-align:center;text-decoration:none;box-shadow:0 8px 30px rgba(255,190,61,.25)}
+.btn.ghost{background:transparent;color:var(--txt);border:1.5px solid var(--line);box-shadow:none}
+.btn.blue{background:var(--acc2);box-shadow:0 8px 30px rgba(127,176,255,.25)}
+.note{font-size:13px;color:#7f89b5;margin-top:14px;text-align:center}
+.field{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px;margin:12px 0}
+.lbl{font-size:13px;color:var(--mut);margin-bottom:6px;display:block}
+input,select{width:100%;background:rgba(0,0,0,.25);border:1px solid var(--line);border-radius:12px;color:var(--txt);font:600 17px Onest,sans-serif;padding:11px 12px;outline:none}
+input:focus,select:focus{border-color:var(--acc2)}
+input[type=number]{-moz-appearance:textfield}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}
+.chip{border:1px solid var(--line);background:rgba(255,255,255,.04);color:var(--txt);border-radius:999px;padding:9px 13px;font:600 15px Onest,sans-serif;cursor:pointer}
+.chip:active{transform:scale(.96)}
+.person{background:var(--card);border:1px solid var(--line);border-left:4px solid var(--c,#fff);border-radius:16px;padding:12px;margin:10px 0}
+.row{display:flex;gap:8px;align-items:center;margin-top:8px}
+.row>*{flex:1}
+.row .small{flex:0 0 92px}
+.seg{display:flex;background:rgba(0,0,0,.25);border:1px solid var(--line);border-radius:12px;padding:3px;gap:3px;margin-top:8px}
+.seg button{flex:1;border:0;background:transparent;color:var(--mut);font:600 14px Onest,sans-serif;padding:9px 4px;border-radius:9px;cursor:pointer}
+.seg button.on{background:rgba(255,255,255,.12);color:var(--txt)}
+.del{flex:0 0 auto!important;background:transparent;border:0;color:#7f89b5;font:600 22px Onest;cursor:pointer;padding:0 6px}
+.err{color:#ff8a8a;font-size:14px;min-height:18px;margin-top:8px}
+#stage{position:relative;width:100%;aspect-ratio:9/16;border-radius:20px;overflow:hidden;background:#0a0f26;box-shadow:0 20px 60px rgba(0,0,0,.5)}
+#stage canvas,#stage img{position:absolute;inset:0;width:100%;height:100%;display:block}
+#skip{position:absolute;right:10px;top:10px;z-index:2;background:rgba(0,0,0,.35);border:1px solid var(--line);color:var(--mut);border-radius:999px;padding:7px 12px;font:600 13px Onest;cursor:pointer}
+.res-actions{display:none}
+.res-actions.on{display:block;animation:fade .6s ease}
+.hint{font-size:13px;color:#7f89b5;text-align:center;margin-top:8px}
+.me{margin-top:26px;background:linear-gradient(160deg,rgba(255,190,61,.10),rgba(127,176,255,.08));border:1px solid var(--line);border-radius:20px;padding:20px}
+.me h2{margin-top:0}
+.me p{color:#cfd5f2}
+.call{font-weight:800;font-size:20px;text-align:center;margin:26px 0 4px;line-height:1.3}
+</style>
+</head>
+<body>
+<canvas id="sky"></canvas>
+<div class="wrap">
+
+  <!-- 1. Вступление -->
+  <section class="screen on" id="s-intro">
+    <h1>Твоё<br>созвездие</h1>
+    <p>Впиши людей, которые были рядом с тобой. Посмотри, как шла твоя жизнь, кто шёл рядом недолго, а кто остался на твоём небе.</p>
+    <button class="btn" id="go">Собрать созвездие</button>
+    <div class="note">Имена никуда не отправляются: всё остаётся в твоём телефоне</div>
+  </section>
+
+  <!-- 2. Люди -->
+  <section class="screen" id="s-form">
+    <h2>Сколько тебе лет?</h2>
+    <div class="field"><input id="age" type="number" inputmode="numeric" min="5" max="100" placeholder="Например, 30"></div>
+    <h2>Кто был рядом?</h2>
+    <p style="font-size:15px">Нажимай, чтобы добавить. Имя можно поменять: «Бабушка Валя», «Рекс», «Серёга».</p>
+    <div class="chips" id="chips"></div>
+    <div id="list"></div>
+    <div class="err" id="err"></div>
+    <button class="btn" id="build">Показать моё созвездие</button>
+  </section>
+
+  <!-- 3. Анимация и результат -->
+  <section class="screen" id="s-play">
+    <div id="stage"><canvas id="c" width="720" height="1280"></canvas><button id="skip">Пропустить</button></div>
+    <div class="res-actions" id="res">
+      <button class="btn" id="save">Сохранить картинку</button>
+      <div class="hint">Не скачивается? Зажми картинку и сохрани её</div>
+      <button class="btn ghost" id="again">Посмотреть ещё раз</button>
+      <button class="btn ghost" id="edit">Изменить людей</button>
+
+      <div class="call">Позвони сегодня тому,<br>кто ещё идёт рядом.</div>
+
+      <div class="me">
+        <h2>Привет, я Артур</h2>
+        <p>Это я снял ролик про созвездие, который тебя сюда привёл. Инвестирую с 2017 года, полгода живу в путешествиях и рассказываю, как распоряжаться деньгами так, чтобы на близких всегда хватало времени.</p>
+        <a class="btn" href="https://www.instagram.com/artur__yunusov/" target="_blank" rel="noopener">Подписаться в Instagram</a>
+        <a class="btn blue" href="https://t.me/YunusovArtur" target="_blank" rel="noopener">Мой Telegram-канал</a>
+      </div>
+    </div>
+  </section>
+</div>
+
+<script>
+(function (global) {
+'use strict';
+function mulberry32(a) {
+return function () {
+a |= 0; a = (a + 0x6D2B79F5) | 0;
+var t = Math.imul(a ^ (a >>> 15), 1 | a);
+t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+};
+}
+function clamp(v, a, b) { return v < a ? a : v > b ? b : v; }
+function lerp(a, b, t) { return a + (b - a) * t; }
+function ease(t) { t = clamp(t, 0, 1); return t * t * (3 - 2 * t); }
+function easeOut(t) { t = clamp(t, 0, 1); return 1 - Math.pow(1 - t, 3); }
+function hexToRgb(h) {
+h = h.replace('#', '');
+if (h.length === 3) h = h.split('').map(function (c) { return c + c; }).join('');
+var n = parseInt(h, 16);
+return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+}
+function rgba(rgb, a) { return 'rgba(' + rgb[0] + ',' + rgb[1] + ',' + rgb[2] + ',' + a + ')'; }
+function tint(rgb, k) { return [Math.round(lerp(rgb[0], 255, k)), Math.round(lerp(rgb[1], 255, k)), Math.round(lerp(rgb[2], 255, k))]; }
+function createLife(cfg) {
+var W = cfg.W, H = cfg.H;
+var S = cfg.pxPerYear || H * 0.073;          // пикселей на год по вертикали
+var Y0 = cfg.nowY || H * 0.52;               // линия «сейчас»
+var AXIS_X = W * 0.075;
+var L = W * (cfg.left || 0.14), R = W * (cfg.right || 0.88);
+var SP = W * (cfg.spacing || 0.118), CX = W * (cfg.centerX || 0.5);
+var DT = 0.02;
+var A0 = cfg.simStart != null ? cfg.simStart : cfg.startAge - 8, A1 = cfg.endAge + 2;
+var N = Math.ceil((A1 - A0) / DT) + 1;
+var font = cfg.font || 'Inter, sans-serif';
+var unit = W / 1080;                          // масштаб для размеров
+var people = cfg.people.map(function (p, i) {
+var q = Object.assign({}, p);
+q.rgb = hexToRgb(p.color || '#ffffff');
+q.light = tint(q.rgb, 0.35);
+q.idx = i;
+q.x = new Float32Array(N);
+q.valid = new Uint8Array(N);
+q.ph1 = (i * 1.7) % 6.28; q.ph2 = (i * 2.9 + 1) % 6.28;
+q.start = p.born != null ? p.born : (p.enter ? p.enter.age : (p.pass ? p.pass.a0 : -Infinity));
+q.end = Infinity;
+q.deathX = null;
+return q;
+});
+function orderAt(p, a) {
+var o = p.order || 0;
+if (p.moves) p.moves.forEach(function (m) { if (a >= m.age) o = m.order; });
+return o;
+}
+function pinAt(p, a) {
+var pin = null;
+if (p.moves) p.moves.forEach(function (m) { if (a >= m.age) { if (m.free) pin = null; else if (m.x != null) pin = m.x; } });
+if (p.drift && p.death != null && a >= p.drift.age && a < p.death) pin = p.drift.x;
+return pin;
+}
+function offX(side) { return side === 'left' ? -W * 0.12 : W * 1.12; }
+(function simulate() {
+var cur = {}, vel = {};
+for (var i = 0; i < N; i++) {
+var a = A0 + i * DT;
+var present = people.filter(function (p) {
+if (p.pass) return false;
+if (a < p.start) return false;
+if (p.death != null && a >= p.death) return false;
+if (p.leave && a >= p.leave.age) return false;
+if (pinAt(p, a) != null) return false;
+return true;
+}).sort(function (p1, p2) { return orderAt(p1, a) - orderAt(p2, a); });
+var targets = {};
+var n = present.length;
+var sp = Math.min(SP, (R - L) / Math.max(1, n - 1));
+present.forEach(function (p, k) { targets[p.id] = CX + (k - (n - 1) / 2) * sp; });
+people.forEach(function (p) { var pin = pinAt(p, a); if (pin != null) targets[p.id] = pin * W; });
+people.forEach(function (p) {
+if (p.pass) {
+if (a >= p.pass.a0 && a <= p.pass.a1) {
+var t = (a - p.pass.a0) / (p.pass.a1 - p.pass.a0);
+p.x[i] = lerp(offX(p.pass.from), offX(p.pass.to), t);
+p.valid[i] = 1;
+}
+return;
+}
+if (a < p.start) return;
+if (p.death != null && a >= p.death) {
+if (p.deathX == null) p.deathX = cur[p.id];
+if (p.end === Infinity) p.end = a;
+return;
+}
+var x = cur[p.id];
+var v = vel[p.id] || 0;
+var tau = 0.9;
+var tgt;
+if (x == null) {
+if (p.startX != null) x = p.startX * W;
+else if (p.born != null) x = targets[p.id];
+else if (p.enter) x = offX(p.enter.side);
+else x = targets[p.id];
+}
+if (p.leave && a >= p.leave.age) {
+tgt = offX(p.leave.side); tau = p.leave.tau || 0.45;
+if (Math.abs(x - tgt) < W * 0.02) { if (p.end === Infinity) p.end = a; return; }
+} else {
+tgt = targets[p.id];
+if (p.enter && a < p.enter.age + 1.5) tau = 0.4;
+}
+var w = 1.25 / tau;
+v += (w * w * (tgt - x) - 2 * w * v) * DT;
+x += v * DT;
+cur[p.id] = x; vel[p.id] = v;
+p.x[i] = x; p.valid[i] = 1;
+});
+}
+})();
+function idxAt(a) { return clamp(Math.round((a - A0) / DT), 0, N - 1); }
+function wig(p, a) { var k = p.wigAmp ? p.wigAmp(a) : 1; return (Math.sin(a * 0.9 + p.ph1) * 9 + Math.sin(a * 2.3 + p.ph2) * 5 + (k > 1 ? Math.sin(a * 6.1 + p.ph2) * 4 * (k - 1) : 0)) * k * unit; }
+function xAt(p, a) {
+var i = idxAt(a);
+if (!p.valid[i]) return null;
+return p.x[i] + (p.pass ? 0 : wig(p, a));
+}
+var rnd = mulberry32(cfg.seed || 7);
+var bgStars = [];
+for (var s = 0; s < 260; s++) bgStars.push({ x: rnd() * W, y: rnd() * H, r: (rnd() * 1.6 + 0.4) * unit, a: rnd() * 0.6 + 0.15, f: rnd() * 2 + 0.5, p: rnd() * 6.28 });
+var nebula = [
+[0.35, 0.2, 0.5, [70, 60, 160], 0.22], [0.75, 0.45, 0.45, [40, 70, 150], 0.16],
+[0.2, 0.75, 0.55, [60, 40, 120], 0.14], [0.6, 0.9, 0.4, [30, 60, 120], 0.12]
+];
+function drawBg(ctx, time) {
+var g = ctx.createLinearGradient(0, 0, 0, H);
+g.addColorStop(0, '#0a0f26'); g.addColorStop(0.5, '#0b1330'); g.addColorStop(1, '#070b1c');
+ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+nebula.forEach(function (n) {
+var rg = ctx.createRadialGradient(n[0] * W, n[1] * H, 0, n[0] * W, n[1] * H, n[2] * W);
+rg.addColorStop(0, rgba(n[3], n[4])); rg.addColorStop(1, rgba(n[3], 0));
+ctx.fillStyle = rg; ctx.fillRect(0, 0, W, H);
+});
+bgStars.forEach(function (st) {
+var tw = 0.6 + 0.4 * Math.sin(time * st.f + st.p);
+ctx.fillStyle = 'rgba(220,230,255,' + (st.a * tw).toFixed(3) + ')';
+ctx.beginPath(); ctx.arc(st.x, st.y, st.r, 0, 6.283); ctx.fill();
+});
+}
+function drawAxis(ctx, a, alpha) {
+if (alpha <= 0) return;
+ctx.save();
+ctx.globalAlpha = alpha;
+ctx.strokeStyle = 'rgba(180,195,255,0.13)'; ctx.lineWidth = 2 * unit;
+ctx.beginPath(); ctx.moveTo(AXIS_X, H * 0.07); ctx.lineTo(AXIS_X, H); ctx.stroke();
+ctx.font = '500 ' + Math.round(26 * unit) + 'px ' + font;
+ctx.fillStyle = 'rgba(190,200,240,0.45)';
+ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+ctx.fillText(cfg.axisLabel || 'возраст', W * 0.035, H * 0.05);
+ctx.textAlign = 'right';
+var lo = Math.ceil((a - (H - Y0) / S) / 5) * 5, hi = Math.floor((a + Y0 / S) / 5) * 5;
+for (var k = lo; k <= hi; k += 5) {
+if (k < 0) continue;
+var y = Y0 + (a - k) * S;
+if (y < H * 0.08) continue;
+var near = Math.abs(y - Y0) < 115 * unit;
+ctx.fillStyle = 'rgba(190,200,240,' + (near ? 0 : 0.32) + ')';
+ctx.fillText(String(k), AXIS_X - 14 * unit, y);
+ctx.fillStyle = 'rgba(190,200,240,0.3)';
+ctx.beginPath(); ctx.arc(AXIS_X, y, 3 * unit, 0, 6.283); ctx.fill();
+}
+if (a >= 0) {
+ctx.font = '700 ' + Math.round(30 * unit) + 'px ' + font;
+ctx.fillStyle = 'rgba(235,240,255,0.95)';
+ctx.fillText(String(Math.floor(a)), AXIS_X - 14 * unit, Y0);
+ctx.beginPath(); ctx.arc(AXIS_X, Y0, 5 * unit, 0, 6.283); ctx.fill();
+}
+ctx.restore();
+}
+function drawTrail(ctx, p, a, head) {
+var span = (H - Y0) / S + 0.3;
+var aTop = Math.min(head == null ? a : head, p.end);
+var aLo = Math.max(p.start, a - span, A0);
+var pts = riseTail(p, a);
+var LF = LIFT[p.id] || 0;
+if (LF > 0 && aTop > aLo) { var xl = xAt(p, aTop); if (xl != null) { var yt = Y0 + (a - aTop) * S; for (var q = 1; q >= 0.05; q -= 0.05) pts.push([xl, yt - LF * q]); } }
+if (aTop > aLo) {
+for (var b = aTop; b >= aLo - 1e-6; b -= 0.06) {
+var x = xAt(p, b);
+if (x == null) continue;
+pts.push([x, Y0 + (a - b) * S]);
+}
+}
+if (pts.length < 2) return;
+ctx.save();
+ctx.globalCompositeOperation = 'lighter';
+ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+var yb = Y0 + span * S;
+for (var pass = 0; pass < 2; pass++) {
+var g = ctx.createLinearGradient(0, Y0, 0, yb);
+var base = pass === 0 ? 0.14 : 0.92;
+for (var k = 0; k <= 6; k++) { var d = k / 6; g.addColorStop(d, rgba(p.rgb, base * Math.pow(1 - d, 1.3))); }
+ctx.strokeStyle = g;
+ctx.lineWidth = (pass === 0 ? 16 : 4.5) * unit * (p.wfn ? p.wfn(a) : 1);
+ctx.beginPath(); ctx.moveTo(pts[0][0], pts[0][1]);
+for (var j = 1; j < pts.length; j++) ctx.lineTo(pts[j][0], pts[j][1]);
+ctx.stroke();
+}
+ctx.restore();
+}
+function glowDot(ctx, x, y, rgb, r, alpha) {
+ctx.save();
+ctx.globalCompositeOperation = 'lighter';
+var rg = ctx.createRadialGradient(x, y, 0, x, y, r * 4.5);
+rg.addColorStop(0, rgba(rgb, 0.55 * alpha)); rg.addColorStop(1, rgba(rgb, 0));
+ctx.fillStyle = rg; ctx.beginPath(); ctx.arc(x, y, r * 4.5, 0, 6.283); ctx.fill();
+ctx.fillStyle = rgba(rgb, 0.9 * alpha); ctx.beginPath(); ctx.arc(x, y, r * 1.35, 0, 6.283); ctx.fill();
+ctx.fillStyle = 'rgba(255,255,255,' + alpha + ')'; ctx.beginPath(); ctx.arc(x, y, r * 0.75, 0, 6.283); ctx.fill();
+ctx.restore();
+}
+function sparkle(ctx, x, y, rgb, size, alpha, time) {
+var tw = 0.85 + 0.15 * Math.sin(time * 2.2 + x * 0.01);
+ctx.save();
+ctx.globalCompositeOperation = 'lighter';
+var rg = ctx.createRadialGradient(x, y, 0, x, y, size * 5);
+rg.addColorStop(0, rgba(rgb, 0.5 * alpha * tw)); rg.addColorStop(1, rgba(rgb, 0));
+ctx.fillStyle = rg; ctx.beginPath(); ctx.arc(x, y, size * 5, 0, 6.283); ctx.fill();
+ctx.strokeStyle = 'rgba(255,255,255,' + (0.8 * alpha * tw) + ')';
+ctx.lineWidth = 2 * unit;
+ctx.beginPath();
+ctx.moveTo(x - size * 2.6, y); ctx.lineTo(x + size * 2.6, y);
+ctx.moveTo(x, y - size * 2.6); ctx.lineTo(x, y + size * 2.6);
+ctx.stroke();
+ctx.fillStyle = 'rgba(255,255,255,' + alpha + ')';
+ctx.beginPath(); ctx.arc(x, y, size * 0.7, 0, 6.283); ctx.fill();
+ctx.restore();
+}
+function label(ctx, text, x, y, rgb, alpha, size, align) {
+if (alpha <= 0.01) return;
+ctx.save();
+ctx.font = '600 ' + Math.round((size || 36) * unit) + 'px ' + font;
+ctx.textAlign = align || 'center'; ctx.textBaseline = 'alphabetic';
+if (!align || align === 'center') { var tw = ctx.measureText(text).width; x = clamp(x, tw / 2 + 14 * unit, W - tw / 2 - 14 * unit); }
+ctx.shadowColor = 'rgba(0,0,0,0.6)'; ctx.shadowBlur = 10 * unit;
+ctx.fillStyle = rgba(rgb, alpha);
+ctx.fillText(text, x, y);
+ctx.restore();
+}
+var RISE = cfg.rise || 0.55, FLOAT = cfg.float || 1.5;
+function deathHead(p) { var x = xAt(p, p.death - DT); return x == null ? (p.star ? p.star[0] * W : W / 2) : x; }
+function afterDeath(p, a) {
+if (p.death == null || a < p.death || !p.star) return null;
+var tau = a - p.death, x0 = deathHead(p), sx = p.star[0] * W, sy = p.star[1] * H;
+var dir = sx >= x0 ? 1 : -1;
+var rx = function (u) { return x0 + dir * 0.03 * W * easeOut(u); };
+var ry = function (u) { return Y0 - 0.055 * H * easeOut(u); };
+if (tau < RISE) { var u = tau / RISE; return { phase: 0, x: rx(u), y: ry(u), u: u }; }
+var v = ease((tau - RISE) / FLOAT), ex = rx(1), ey = ry(1);
+return { phase: v < 1 ? 1 : 2, x: lerp(ex, sx, v), y: lerp(ey, sy, v) - Math.sin(v * Math.PI) * 20 * unit, v: v,
+pulse: clamp(1 - (tau - RISE - FLOAT) / 0.9, 0, 1) * (tau >= RISE + FLOAT ? 1 : 0) };
+}
+function starPos(p, a) { var d = afterDeath(p, a); return d && d.phase > 0 ? [d.x, d.y, d.phase === 2 ? 1 : d.v, d] : null; }
+var LIFT = {};
+function riseTail(p, a) {
+if (p.death == null || !p.star || a < p.death) return [];
+var x0 = deathHead(p), sx = p.star[0] * W, dir = sx >= x0 ? 1 : -1, out = [];
+var tmax = Math.min(a - p.death, RISE);
+for (var tau = tmax; tau >= 0; tau -= 0.03) {
+var u = tau / RISE, x = x0 + dir * 0.03 * W * easeOut(u), sy = Y0 - 0.055 * H * easeOut(u);
+var b = p.death + tau + (Y0 - sy) / S;
+out.push([x, Y0 + (a - b) * S]);
+}
+return out;
+}
+function draw(ctx, a, opts) {
+opts = opts || {};
+var time = opts.time || 0;
+drawBg(ctx, time);
+drawAxis(ctx, a, opts.axis == null ? 1 : opts.axis);
+var HA = opts.headAge || {};
+LIFT = opts.lift || {};
+people.forEach(function (p) { drawTrail(ctx, p, a, HA[p.id]); });
+var con = opts.constellation;
+if (con && con.progress > 0) {
+var pts = con.order.map(function (id) {
+var p = people.find(function (q) { return q.id === id; });
+if (!p) return null;
+var sp = starPos(p, a);
+if (sp) return [sp[0], sp[1]];
+if (a >= p.start && a <= p.end) { var hx = xAt(p, a); if (hx != null) return [hx, Y0]; }
+return null;
+}).filter(Boolean);
+var segs = pts.length - 1 + (con.closed ? 1 : 0);
+var done = con.progress * segs;
+ctx.save();
+ctx.strokeStyle = 'rgba(200,210,255,' + (0.45 * (con.alpha == null ? 1 : con.alpha)) + ')';
+ctx.lineWidth = 2 * unit;
+for (var k = 0; k < segs; k++) {
+var f = clamp(done - k, 0, 1); if (f <= 0) break;
+var p1 = pts[k], p2 = pts[(k + 1) % pts.length];
+ctx.beginPath(); ctx.moveTo(p1[0], p1[1]); ctx.lineTo(lerp(p1[0], p2[0], f), lerp(p1[1], p2[1], f)); ctx.stroke();
+}
+ctx.restore();
+}
+var lvOf = function (p) { return p.labelLevel || 0; };
+var labelW = function (text, size) { ctx.save(); ctx.font = '600 ' + Math.round(size * unit) + 'px ' + font; var w = ctx.measureText(text).width; ctx.restore(); return w; };
+people.forEach(function (p) {
+var d = afterDeath(p, a);
+var upOff = (34 + 44 * lvOf(p)) * unit;
+if (d && d.phase === 0) {
+glowDot(ctx, d.x, d.y, p.rgb, 9 * unit, 1);
+label(ctx, p.label, d.x, d.y - upOff, p.light, 1, 33);
+return;
+}
+if (d) {
+var k = d.phase === 2 ? 1 : ease((d.v - 0.45) / 0.55);
+sparkle(ctx, d.x, d.y, p.light, 7 * unit * (1 + 0.25 * (d.pulse || 0)), 1, time);
+var size = lerp(33, 31, k), w = labelW(p.label, size);
+var fcx, fcy;
+if (p.starLabel === 'below') { fcx = d.x; fcy = d.y + 48 * unit; }
+else if (p.starLabelLeft) { fcx = d.x - 22 * unit - w / 2; fcy = d.y + 11 * unit; }
+else { fcx = d.x + 22 * unit + w / 2; fcy = d.y + 11 * unit; }
+var cx = lerp(d.x, fcx, k), cy = lerp(d.y - upOff, fcy, k);
+label(ctx, p.label, cx, cy, p.light, lerp(1, 0.88, k), size, 'center');
+return;
+}
+var ha = HA[p.id] == null ? a : HA[p.id];
+if (ha < p.start || ha > p.end) return;
+var x = xAt(p, ha); if (x == null) return;
+var hy = Y0 + (a - ha) * S - (LIFT[p.id] || 0);
+var born = p.born != null && !p.noFade ? ease((ha - p.born) / 0.8) : 1;
+var on = x > -W * 0.05 && x < W * 1.05 ? 1 : 0;
+var edge = clamp(Math.min(x, W - x) / (W * 0.08), 0, 1);
+var al = (opts.headsAlpha == null ? 1 : opts.headsAlpha) * born * on;
+var lf = p.labelFade ? p.labelFade(ha) : 1;
+glowDot(ctx, x, hy, p.rgb, (6 + 3 * born) * unit * Math.sqrt(p.wfn ? p.wfn(ha) : 1), Math.max(al, 0.25 * on));
+if (p.pass || p.labelBelow) { label(ctx, p.label, x, hy + 52 * unit, p.light, al * edge * lf, 34); return; }
+label(ctx, p.label, x, hy - upOff, p.light, al * edge * lf, 33);
+});
+}
+return { draw: draw, people: people, Y0: Y0, S: S, xOf: function (id, a) { var p = people.find(function (q) { return q.id === id; }); return p ? xAt(p, a) : null; } };
+}
+global.FamilyLife = { createLife: createLife, ease: ease, easeOut: easeOut, clamp: clamp, lerp: lerp };
+})(typeof window !== 'undefined' ? window : globalThis);
+</script>
+<script>
+(function () {
+'use strict';
+// ---------- фон со звёздами для страницы ----------
+var sky = document.getElementById('sky'), sc = sky.getContext('2d'), stars = [];
+function resizeSky() {
+  var d = Math.min(window.devicePixelRatio || 1, 2);
+  sky.width = innerWidth * d; sky.height = innerHeight * d;
+  stars = []; for (var i = 0; i < 140; i++) stars.push([Math.random() * sky.width, Math.random() * sky.height, Math.random() * 1.4 * d + .3, Math.random() * 6]);
+}
+function drawSky(t) {
+  sc.clearRect(0, 0, sky.width, sky.height);
+  for (var i = 0; i < stars.length; i++) { var s = stars[i]; sc.fillStyle = 'rgba(220,230,255,' + (0.25 + 0.3 * Math.sin(t / 900 + s[3])) + ')'; sc.beginPath(); sc.arc(s[0], s[1], s[2], 0, 6.283); sc.fill(); }
+  requestAnimationFrame(drawSky);
+}
+addEventListener('resize', resizeSky); resizeSky(); requestAnimationFrame(drawSky);
+
+function show(id) { document.querySelectorAll('.screen').forEach(function (s) { s.classList.toggle('on', s.id === id); }); scrollTo(0, 0); }
+
+// ---------- роли ----------
+// kind: family — рядом с рождения; born — появляется рядом с тобой; enter — приходит сбоку
+var ROLES = [
+  { k: 'Мама', order: 1.0, color: '#ff5d73', from: 0 },
+  { k: 'Папа', order: 4.0, color: '#5b8cff', from: 0 },
+  { k: 'Бабушка', order: 0.2, color: '#a78bfa', from: 0 },
+  { k: 'Дедушка', order: 4.8, color: '#e6ebff', from: 0 },
+  { k: 'Сестра', order: 1.8, color: '#ffa07a', from: 0, born: true },
+  { k: 'Брат', order: 3.0, color: '#b9f27c', from: 0, born: true },
+  { k: 'Лучший друг', order: 3.4, color: '#4ee39a', from: 7 },
+  { k: 'Подруга', order: 3.5, color: '#7ee8c8', from: 7 },
+  { k: 'Первая любовь', order: 2.75, color: '#7fb0ff', from: 16 },
+  { k: 'Жена', order: 2.8, color: '#ff8fc8', from: 25 },
+  { k: 'Муж', order: 2.8, color: '#6fd3ff', from: 25 },
+  { k: 'Сын', order: 2.6, color: '#3fd5e3', from: 30, born: true },
+  { k: 'Дочка', order: 2.65, color: '#ff9ad6', from: 30, born: true },
+  { k: 'Собака', order: 2.2, color: '#e8a25c', from: 10, born: true },
+  { k: 'Кошка', order: 2.3, color: '#d7c2ff', from: 10, born: true },
+  { k: 'Другой человек', order: 3.6, color: '#f2e6a0', from: 10 }
+];
+var people = [], uid = 0;
+var chipsEl = document.getElementById('chips'), listEl = document.getElementById('list');
+ROLES.forEach(function (r) {
+  var b = document.createElement('button'); b.className = 'chip'; b.textContent = '+ ' + r.k;
+  b.onclick = function () { add(r); }; chipsEl.appendChild(b);
+});
+function add(r, st) {
+  if (people.length >= 14) { err('Максимум 14 человек — так созвездие останется красивым'); return; }
+  people.push({ id: 'p' + (++uid), role: r, name: r.k === 'Другой человек' ? '' : r.k, from: r.from, status: st || 'near', at: '' });
+  render();
+}
+function err(t) { document.getElementById('err').textContent = t || ''; }
+function render() {
+  listEl.innerHTML = '';
+  people.forEach(function (p, i) {
+    var d = document.createElement('div'); d.className = 'person'; d.style.setProperty('--c', p.role.color);
+    d.innerHTML =
+      '<div class="row"><input class="nm" maxlength="18" placeholder="Имя" value="' + esc(p.name) + '"><button class="del" title="Убрать">×</button></div>' +
+      '<div class="row"><span class="lbl" style="margin:0">С какого твоего возраста рядом</span><input class="small fr" type="number" inputmode="numeric" min="0" max="100" value="' + p.from + '"></div>' +
+      '<div class="seg">' + [['near', 'Рядом'], ['sky', 'На небе'], ['gone', 'Разошлись']].map(function (s) { return '<button data-s="' + s[0] + '" class="' + (p.status === s[0] ? 'on' : '') + '">' + s[1] + '</button>'; }).join('') + '</div>' +
+      (p.status !== 'near' ? '<div class="row"><span class="lbl" style="margin:0">' + (p.status === 'sky' ? 'Ушёл на небо, когда тебе было' : 'Разошлись, когда тебе было') + '</span><input class="small at" type="number" inputmode="numeric" min="0" max="100" value="' + p.at + '"></div>' : '');
+    d.querySelector('.nm').oninput = function (e) { p.name = e.target.value; };
+    d.querySelector('.fr').oninput = function (e) { p.from = e.target.value; };
+    var at = d.querySelector('.at'); if (at) at.oninput = function (e) { p.at = e.target.value; };
+    d.querySelector('.del').onclick = function () { people.splice(i, 1); render(); };
+    d.querySelectorAll('.seg button').forEach(function (b) { b.onclick = function () { p.status = b.dataset.s; render(); }; });
+    listEl.appendChild(d);
+  });
+}
+function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+add(ROLES[0]); add(ROLES[1]);
+
+document.getElementById('go').onclick = function () { show('s-form'); };
+document.getElementById('edit').onclick = function () { stop(); show('s-form'); };
+
+// ---------- сборка сцены ----------
+var SLOTS = [[0.2, 0.235], [0.77, 0.2], [0.47, 0.15], [0.15, 0.39], [0.72, 0.335], [0.34, 0.31], [0.6, 0.27], [0.88, 0.42], [0.3, 0.45], [0.62, 0.45], [0.1, 0.17], [0.9, 0.12], [0.42, 0.42], [0.83, 0.29]];
+function buildScene(A) {
+  var list = [], used = {};
+  people.forEach(function (p) {
+    var name = (p.name || p.role.k).trim().slice(0, 18) || p.role.k;
+    var base = name, n = 2; while (used[name]) name = base + ' ' + (n++); used[name] = 1;
+    var from = Math.max(0, Math.min(A - 1, +p.from || 0));
+    var q = { id: p.id, label: name, color: p.role.color, order: p.role.order + list.length * 0.001 };
+    if (from > 0) { if (p.role.born) q.born = from; else q.enter = { age: from, side: q.order < 2.5 ? 'left' : 'right' }; }
+    if (p.status !== 'near') {
+      var at = +p.at; if (!(at >= 0)) at = A;
+      if (p.status === 'sky') {
+        q.death = Math.max(from + 0.8, Math.min(at, A - 2.3));
+        q._sky = true;
+      } else {
+        q.leave = { age: Math.max(from + 0.8, Math.min(at, A - 0.6)), side: q.order < 2.5 ? 'left' : 'right' }; (function (la) { q.labelFade = function (x) { var u = Math.max(0, Math.min(1, (x - la) / 0.45)); return 1 - u * u * (3 - 2 * u); }; })(q.leave.age);
+      }
+    }
+    list.push(q);
+  });
+  // звёзды: левые — на левые места, правые — на правые
+  var dead = list.filter(function (q) { return q._sky; }).sort(function (a, b) { return a.order - b.order; });
+  var slots = SLOTS.slice(0, Math.max(dead.length, 1)).sort(function (a, b) { return a[0] - b[0]; });
+  dead.forEach(function (q, i) {
+    var s = slots[i]; q.star = s;
+    q.drift = { age: Math.max(q.death - 2.2, (q.born || (q.enter && q.enter.age) || 0) + 0.3), x: s[0] < 0.5 ? Math.max(0.06, s[0] - 0.05) : Math.min(0.94, s[0] + 0.05) };
+    if (s[1] > 0.4) q.starLabel = 'below';
+    if (s[0] > 0.7) q.starLabelLeft = true;
+  });
+  list.push({ id: 'me', label: 'Я', color: '#ffbe3d', order: 2.5, born: 0 });
+  // ярусы подписей: чередуем слева направо
+  list.slice().sort(function (a, b) { return a.order - b.order; }).forEach(function (q, i) { q.labelLevel = i % 3; });
+  // созвездие — по кругу вокруг центра
+  var cx = 0, cy = 0; dead.forEach(function (q) { cx += q.star[0]; cy += q.star[1]; }); cx /= dead.length || 1; cy /= dead.length || 1;
+  var order = dead.slice().sort(function (a, b) { return Math.atan2(a.star[1] - cy, a.star[0] - cx) - Math.atan2(b.star[1] - cy, b.star[0] - cx); }).map(function (q) { return q.id; });
+  return { cfg: { W: 720, H: 1280, startAge: -3, endAge: A + 3, simStart: -10, seed: 11, font: 'Onest, sans-serif', spacing: 0.13, people: list }, order: order, nDead: dead.length };
+}
+
+// ---------- проигрывание ----------
+var cv = document.getElementById('c'), ctx = cv.getContext('2d'), W = 720, H = 1280;
+var raf = 0, life = null, S = null, A = 30, T = 20, t0 = 0, done = false, finalURL = '';
+function ageAt(t) {
+  var u = Math.min(1, t / T);
+  var f = u < 0.85 ? u * 0.95 / 0.85 : 0.95 + 0.05 * (1 - Math.pow(1 - (u - 0.85) / 0.15, 2));
+  return -2 + (A + 2) * f;
+}
+function E(x) { x = Math.max(0, Math.min(1, x)); return x * x * (3 - 2 * x); }
+function txt(s, y, size, w, al, color) {
+  if (al <= 0.01) return;
+  ctx.save(); ctx.globalAlpha = al; ctx.font = w + ' ' + size + 'px Onest, sans-serif'; ctx.textAlign = 'center';
+  ctx.shadowColor = 'rgba(0,0,0,.85)'; ctx.shadowBlur = 16; ctx.fillStyle = color || '#f4f6ff'; ctx.fillText(s, W / 2, y); ctx.restore();
+}
+function frame(now) {
+  var t = (now - t0) / 1000;
+  var a = ageAt(t), fz = t - T;
+  var conP = S.nDead >= 2 ? E((fz - 0.6) / 2.6) : 0;
+  life.draw(ctx, a, { time: t, axis: 1 - E((fz + 0.8) / 1.4), constellation: { order: S.order, closed: S.nDead >= 3, progress: conP } });
+  var a1 = E((fz - 1.0) / 0.9);
+  txt('Жизнь — это путь', H * 0.64, 50, 800, a1);
+  txt('Кто-то идёт рядом недолго.', H * 0.68, 27, 600, a1 * E((fz - 1.8) / 0.9), 'rgba(235,238,255,.95)');
+  txt(S.nDead ? 'А кто-то остаётся на твоём небе навсегда.' : 'Береги тех, кто идёт рядом сейчас.', H * 0.705, 27, 600, a1 * E((fz - 2.6) / 0.9), 'rgba(235,238,255,.95)');
+  txt('собери своё созвездие · напиши «созвездие» @artur__yunusov', H * 0.965, 17, 600, E((fz - 1) / 1) * 0.7, '#a9b2d6');
+  if (fz > 5.2 && !done) finish();
+  if (!done) raf = requestAnimationFrame(frame);
+}
+function finish() {
+  done = true;
+  try { finalURL = cv.toDataURL('image/png'); } catch (e) { finalURL = ''; }
+  if (finalURL) {
+    var img = document.getElementById('final') || document.createElement('img');
+    img.id = 'final'; img.alt = 'Моё созвездие'; img.src = finalURL;
+    document.getElementById('stage').appendChild(img);
+  }
+  document.getElementById('skip').style.display = 'none';
+  document.getElementById('res').classList.add('on');
+}
+function stop() { cancelAnimationFrame(raf); done = true; }
+function play() {
+  stop(); done = false;
+  var old = document.getElementById('final'); if (old) old.remove();
+  document.getElementById('res').classList.remove('on');
+  document.getElementById('skip').style.display = '';
+  t0 = performance.now(); raf = requestAnimationFrame(frame);
+}
+document.getElementById('skip').onclick = function () { t0 = performance.now() - (T + 5.3) * 1000; };
+document.getElementById('again').onclick = function () { play(); scrollTo(0, 0); };
+document.getElementById('build').onclick = function () {
+  err('');
+  var age = +document.getElementById('age').value;
+  if (!(age >= 5 && age <= 100)) { err('Напиши свой возраст — от 5 до 100'); return; }
+  if (people.length < 1) { err('Добавь хотя бы одного человека'); return; }
+  for (var i = 0; i < people.length; i++) {
+    var p = people[i];
+    if (+p.from > age) { err('«' + (p.name || p.role.k) + '»: возраст, с которого рядом, больше твоего'); return; }
+    if (p.status !== 'near' && p.at !== '' && (+p.at > age || +p.at < +p.from)) { err('«' + (p.name || p.role.k) + '»: проверь возраст, когда это случилось'); return; }
+    if (p.status !== 'near' && p.at === '') { err('«' + (p.name || p.role.k) + '»: напиши, в каком твоём возрасте это было'); return; }
+  }
+  A = age; T = Math.max(14, Math.min(40, 8 + A * 0.45));
+  S = buildScene(A);
+  life = FamilyLife.createLife(S.cfg);
+  show('s-play');
+  document.fonts.load('800 40px Onest').then(play, play);
+};
+document.getElementById('save').onclick = function () {
+  if (!finalURL) return;
+  fetch(finalURL).then(function (r) { return r.blob(); }).then(function (blob) {
+    var file = new File([blob], 'moe-sozvezdie.png', { type: 'image/png' });
+    if (navigator.canShare && navigator.canShare({ files: [file] })) { navigator.share({ files: [file], title: 'Моё созвездие' }).catch(function () {}); return; }
+    var a = document.createElement('a'); a.href = finalURL; a.download = 'moe-sozvezdie.png'; document.body.appendChild(a); a.click(); a.remove();
+  });
+};
+})();
+</script>
+</body>
+</html>
